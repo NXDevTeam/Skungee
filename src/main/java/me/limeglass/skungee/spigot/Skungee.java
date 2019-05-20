@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -32,10 +33,11 @@ import me.limeglass.skungee.spigot.utils.ReflectionUtil;
 import me.limeglass.skungee.spigot.utils.Utils;
 import net.md_5.bungee.api.ChatColor;
 
+/**
+ * Spigot side Skungee
+ */
 public class Skungee extends JavaPlugin {
-	
-	//Spigot
-	
+
 	private final Map<String, FileConfiguration> files = new HashMap<>();
 	private final String packageName = "me.limeglass.skungee.spigot";
 	private final static String prefix = "&8[&cSkungee&8] &e";
@@ -47,7 +49,7 @@ public class Skungee extends JavaPlugin {
 	private Metrics metrics;
 	private Sockets sockets;
 	private boolean skript;
-	
+
 	public void onEnable() {
 		instance = this;
 		saveDefaultConfig();
@@ -73,9 +75,8 @@ public class Skungee extends JavaPlugin {
 		}
 		encryption = new EncryptionUtil(this);
 		encryption.hashFile();
-		if (getConfig().getBoolean("Reciever.enabled", false)) {
+		if (getConfig().getBoolean("reciever.enabled", false)) {
 			this.reciever = new Reciever(this);
-			getServer().getScheduler().runTaskLater(instance, () -> this.sockets = new Sockets(this), 5);
 		} else {
 			this.sockets = new Sockets(this);
 		}
@@ -89,7 +90,11 @@ public class Skungee extends JavaPlugin {
 		if (!getConfig().getBoolean("DisableRegisteredInfo", false))
 			Bukkit.getLogger().info(nameplate + "has been enabled!");
 	}
-	
+
+	public void loadSockets() {
+		this.sockets = new Sockets(this);
+	}
+
 	public void onDisable() {
 		sockets.send(new SkungeePacket(true, SkungeePacketType.DISCONNECT, Bukkit.getPort()));
 		sockets.disconnect();
@@ -162,52 +167,54 @@ public class Skungee extends JavaPlugin {
 		infoMessage("End of Error.");
 		infoMessage();
 	}
-	
+
 	public static Skungee getInstance() {
 		return instance;
 	}
-	
+
 	public boolean isSkriptPresent() {
 		return skript;
 	}
-	
+
 	public Metrics getMetrics() {
 		return metrics;
 	}
-	
+
 	public Sockets getSockets() {
 		return sockets;
 	}
-	
-	public ServerSocket getReciever() {
-		return reciever.getReciever();
+
+	public Optional<ServerSocket> getReciever() {
+		if (reciever == null)
+			return Optional.empty();
+		return Optional.of(reciever.getReciever());
 	}
-	
+
 	public String getPackageName() {
 		return packageName;
 	}
-	
+
 	public static String getPrefix() {
 		return prefix;
 	}
-	
+
 	public static String getNameplate() {
 		return nameplate;
 	}
-	
+
 	public EncryptionUtil getEncrypter() {
 		return encryption;
 	}
-	
+
 	public SkriptAddon getAddonInstance() {
 		return addon;
 	}
-	
+
 	//Grabs a FileConfiguration of a defined name. The name can't contain .yml in it.
 	public FileConfiguration getConfiguration(String file) {
 		return (files.containsKey(file)) ? files.get(file) : null;
 	}
-	
+
 	public static void save(String configuration) {
 		try {
 			File configurationFile = new File(instance.getDataFolder(), configuration + ".yml");
@@ -216,13 +223,13 @@ public class Skungee extends JavaPlugin {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static void debugMessage(@Nullable String... messages) {
 		if (instance.getConfig().getBoolean("debug")) {
 			for (String text : messages) consoleMessage("&b" + text);
 		}
 	}
-	
+
 	public static void infoMessage(@Nullable String... messages) {
 		if (messages != null && messages.length > 0) {
 			for (String text : messages) Bukkit.getLogger().info(getNameplate() + text);

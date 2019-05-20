@@ -3,6 +3,7 @@ package me.limeglass.skungee.spigot.sockets;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -61,10 +62,9 @@ public class Sockets {
 		this.attempts = configuration.getInt("connection.attempts", 20);
 		this.keepAlive = configuration.getInt("connection.keep-alive", 10) * 20;
 		this.handshake = configuration.getInt("connection.handshake-delay", 2000);
-		if (configuration.getBoolean("queue.enabled", true)) {
+		if (configuration.getBoolean("queue.enabled", true))
 			this.packetQueue = new PacketQueue(configuration, instance, this);
-		}
-		this.connect();
+		connect();
 	}
 	
 	public long getLastSent() {
@@ -83,7 +83,8 @@ public class Sockets {
 		Set<SkungeePlayer> whitelisted = server.getWhitelistedPlayers().parallelStream()
 				.map(player -> new SkungeePlayer(true, player.getUniqueId(), player.getName()))
 				.collect(Collectors.toSet());
-		HandshakePacket packet = new HandshakePacket(server.getMotd(), server.getMaxPlayers(), configuration.getBoolean("Reciever.enabled", false), server.getPort(), instance.getReciever().getLocalPort(), heartbeat, whitelisted);
+		Optional<ServerSocket> reciever = instance.getReciever();
+		HandshakePacket packet = new HandshakePacket(server.getMotd(), server.getMaxPlayers(), configuration.getBoolean("Reciever.enabled", false), server.getPort(), reciever.isPresent() ? reciever.get().getLocalPort() : -1, heartbeat, whitelisted);
 		scheduler.runTaskAsynchronously(instance, new Runnable() {
 			@SuppressWarnings("deprecation")
 			@Override

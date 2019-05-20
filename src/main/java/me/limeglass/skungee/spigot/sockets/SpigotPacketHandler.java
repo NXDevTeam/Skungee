@@ -89,12 +89,14 @@ public class SpigotPacketHandler {
 			case EVALUATE:
 				if (packet.getObject() != null) {
 					for (String effect : (String[]) packet.getObject()) {
-						if (Effect.parse(effect, null) == null) {
-							Skungee.infoMessage("There was an error executing effect: " + effect);
-							Skungee.infoMessage("Possibly not an effect for this server? Make sure you have any addons that could run this effect and that it looks realistic.");
-						} else {
-							Effect.parse(effect, null).run(null);
-						}
+						Bukkit.getScheduler().runTask(Skungee.getInstance(), () -> {
+							if (Effect.parse(effect, null) == null) {
+								Skungee.infoMessage("There was an error executing effect: " + effect);
+								Skungee.infoMessage("Possibly not an effect for this server? Make sure you have any addons that could run this effect and that it looks realistic.");
+							} else {
+								Effect.parse(effect, null).run(null);
+							}
+						});
 					}
 				}
 				break;
@@ -191,7 +193,7 @@ public class SpigotPacketHandler {
 				}
 				break;
 			case SHUTDOWN:
-				Bukkit.shutdown();
+				Bukkit.getScheduler().runTask(Skungee.getInstance(), () -> Bukkit.shutdown());
 				break;
 			case SERVERLISTPING:
 				if (packet instanceof ServerPingPacket) {
@@ -203,7 +205,7 @@ public class SpigotPacketHandler {
 			case SKUNGEEMESSAGES:
 				if (packet.getObject() != null && packet.getSetObject() != null) {
 					for (String channel : (String[])packet.getSetObject()) {
-						Bukkit.getScheduler().runTask(Skungee.getInstance(), () -> Bukkit.getPluginManager().callEvent(new SkungeeMessageEvent(channel, (String[])packet.getObject())));
+						Bukkit.getPluginManager().callEvent(new SkungeeMessageEvent(channel, (String[])packet.getObject()));
 					}
 				}
 				break;

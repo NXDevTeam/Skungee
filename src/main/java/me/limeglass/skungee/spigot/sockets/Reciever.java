@@ -26,6 +26,7 @@ public class Reciever {
 						reciever = find();
 					else
 						reciever = new ServerSocket(port, 69);
+					instance.loadSockets();
 					Skungee.consoleMessage("Reciever established on port " + reciever.getLocalPort());
 					while (!reciever.isClosed()) {
 						try {
